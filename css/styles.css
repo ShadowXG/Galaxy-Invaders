@@ -1,4 +1,35 @@
-body {
-    background-color: lightcoral;
+div {
+    position: absolute;
     text-align: center;
+    margin: -8px;
+    height: 975px;
+    width: 1900px;
+    overflow: hidden;
 }
+
+div.menu {
+    /* position: relative; */
+    top: 100px;
+}
+
+h1 {
+    font-size: 100px;
+    -webkit-text-stroke: 2px #fff;
+}
+
+button {
+    background-color: rgba(128, 128, 128, 0);
+    font-size: 75px;
+    -webkit-text-stroke: 2px #fff;
+    padding: 25px 100px;
+    border: 2px dashed white;
+    justify-content: space-between;
+}
+
+/* button.controls {
+    background-color: rgba(128, 128, 128, 0);
+    font-size: 75px;
+    -webkit-text-stroke: 2px #fff;
+    padding: 25px 100px;
+    margin-bottom: 40px;
+} */
