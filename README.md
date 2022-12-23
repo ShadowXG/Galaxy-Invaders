@@ -1,12 +1,15 @@
 # Project ONE TITLE IN PROGRESS
 A Star Wars twist on space invaders, shoot all the tie-fighters to win the game! Don't let them hit the bottom or you lose!
 Is that Darth Vader?
-
+---
+---
 Technoligies used:
 - HTML5
 - CSS
 - Javascript
-
+---
+---
+User Stories:
 - As a user, I want to be able to look at controls
 - As a user, I want to be able to restart the game
 - As a user, I want to see how fast I beat the game
