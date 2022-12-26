@@ -21,6 +21,11 @@ class Enemy {
     draw(ctx) {
         ctx.drawImage(this.image, this.x, this.y, this.width, this.height)
     }
+
+    move(xVelocity, yVelocity) {
+        this.x += xVelocity
+        this.y += yVelocity
+    }
 }
 
 class EnemyController {
@@ -33,6 +38,21 @@ class EnemyController {
     ]
     enemyRows = []
 
+    movingDirection = {
+        left: 0,
+        right: 1,
+        downLeft: 2,
+        downRight: 3
+    }
+
+    currentDirection = this.movingDirection.right
+    xVelocity = 0
+    yVelocity = 0
+    defaultXVelocity = 1
+    defaultYVelocity = 1
+    moveDownTimerDefault = 45
+    moveDownTimer = this.moveDownTimerDefault
+
     // Targeting the canvas and creating enemies on it
     constructor(canvas) {
         this.canvas = canvas
@@ -41,12 +61,68 @@ class EnemyController {
 
     // this calls drawEnemies
     draw(ctx) {
+        this.decrementTimer()
+        this.updateVelocityAndDirection()
         this.drawEnemies(ctx)
+        this.resetTimer()
+    }
+
+    resetTimer() {
+        if (this.moveDownTimer <= 0) {
+            this.moveDownTimer = this.moveDownTimerDefault
+        }
+    }
+
+    decrementTimer() {
+        if (this.currentDirection === this.movingDirection.downLeft || this.movingDirection.downRight) {
+            this.moveDownTimer--
+        }
+    }
+
+    updateVelocityAndDirection() {
+        for (const enemyRow of this.enemyRows) {
+            if (this.currentDirection === this.movingDirection.right) {
+                this.xVelocity = this.defaultXVelocity
+                this.yVelocity = 0
+                const rightMostEnemy = enemyRow[enemyRow.length - 1]
+                if (rightMostEnemy.x + rightMostEnemy.width >= this.canvas.width) {
+                    this.currentDirection = this.movingDirection.downLeft
+                    break
+                }
+            }else if (this.currentDirection === this.movingDirection.downLeft) {
+                if (this.moveDown(this.movingDirection.left)) {
+                    break
+                }
+            }else if (this.currentDirection === this.movingDirection.left) {
+                this.xVelocity = -this.defaultXVelocity
+                this.yVelocity = 0
+                const leftMostEnemy = enemyRow[0]
+                if (leftMostEnemy.x <= 0) {
+                    this.currentDirection = this.movingDirection.downRight
+                    break
+                }
+            }else if (this.currentDirection === this.movingDirection.downRight) {
+                if (this.moveDown(this.movingDirection.right)) {
+                    break
+                }
+            }
+        }
+    }
+
+    moveDown(newDirection) {
+        this.xVelocity = 0
+        this.yVelocity = this.defaultYVelocity
+        if (this.moveDownTimer <= 0) {
+            this.currentDirection = newDirection
+            return true
+        }
+        return false
     }
 
     // this changes the array into a latteral array, to draw the enemies easier
     drawEnemies(ctx) {
         this.enemyRows.flat().forEach((enemy) => {
+            enemy.move(this.xVelocity, this.yVelocity)
             enemy.draw(ctx)
         })
     }
@@ -70,14 +146,15 @@ const enemyController = new EnemyController(canvas)
 ////////// GAMEPLAY //////////
 
 const playGame = () => {
-    menu.replaceChildren(null)
+    menu.replaceChildren('')
+    ctx.clearRect(0, 0, game.width, game.height)
     enemyController.draw(ctx)
 }
 
 ////////// MAIN MENU //////////
 
 const createMenu = () => {
-    menu.replaceChildren(null)
+    menu.replaceChildren('')
     // creating the title of the game
     const title = document.createElement('h1')
     title.innerText = 'Galaxy Invaders'
@@ -110,7 +187,7 @@ const createMenu = () => {
 ////////// CONTROLS MENU //////////
 
 const controls = () => {
-    menu.replaceChildren(null)
+    menu.replaceChildren('')
     // Title
     const controlsTitle = document.createElement('h1')
     controlsTitle.innerText = 'Controls'
@@ -118,7 +195,9 @@ const controls = () => {
     controlsTitle.style.fontSize = '75px'
     // Controls
     const controlsText = document.createElement('h3')
-    controlsText.innerText = 'You can move left and right with the A and D keys.\n You can also fire with spacebar.\n Try to survive as long as you can, and post your score to the leaderboard!'
+    controlsText.innerText = 'You can move left and right with the A and D keys.\n\
+    You can also fire with spacebar.\n\
+    Try to survive as long as you can, and post your score to the leaderboard!'
     controlsText.style.color = 'white'
     controlsText.style.fontSize = '50px'
     // Exit Button
