@@ -5,8 +5,73 @@ const ctx = canvas.getContext('2d')
 game.width = 1915
 game.height = 970
 
+////////// ENEMY CREATOR //////////
+
+class Enemy {
+    constructor(x, y, imageNumber) {
+        this.x = x
+        this.y = y
+        this.width = 100
+        this.height = 100
+
+        this.image = new Image()
+        this.image.src = `img/enemy${imageNumber}.png`
+    }
+
+    draw(ctx) {
+        ctx.drawImage(this.image, this.x, this.y, this.width, this.height)
+    }
+}
+
+class EnemyController {
+    enemyMap = [
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    ]
+    enemyRows = []
+
+    // Targeting the canvas and creating enemies on it
+    constructor(canvas) {
+        this.canvas = canvas
+        this.createEnemies()
+    }
+
+    // this calls drawEnemies
+    draw(ctx) {
+        this.drawEnemies(ctx)
+    }
+
+    // this changes the array into a latteral array, to draw the enemies easier
+    drawEnemies(ctx) {
+        this.enemyRows.flat().forEach((enemy) => {
+            enemy.draw(ctx)
+        })
+    }
+
+    // This creates the enemy by looking through the array and assinging a number to enemy number to be used later
+    createEnemies() {
+        this.enemyMap.forEach((row, rowIndex) => {
+            this.enemyRows[rowIndex] = []
+            row.forEach((enemyNumber, enemyIndex) => {
+                if (enemyNumber > 0) {
+                    this.enemyRows[rowIndex].push(
+                        new Enemy(enemyIndex * 150, rowIndex * 75, enemyNumber))
+                }
+            })
+        })
+    }
+}
+
+const enemyController = new EnemyController(canvas)
+
+////////// GAMEPLAY //////////
+
 const playGame = () => {
     menu.replaceChildren(null)
+    enemyController.draw(ctx)
 }
 
 ////////// MAIN MENU //////////
@@ -38,7 +103,7 @@ const createMenu = () => {
     menu.appendChild(playButton)
     menu.appendChild(controlsButton)
     // let the buttons listen for the click event
-    playButton.addEventListener('click', playGame)
+    playButton.addEventListener('click', startGame)
     controlsButton.addEventListener('click', controls)
 }
 
@@ -68,6 +133,12 @@ const controls = () => {
     menu.appendChild(controlsExit)
     // event listener
     controlsExit.addEventListener('click', createMenu)
+}
+
+////////// GAME LOOP //////////
+
+const startGame = () => {
+    setInterval(playGame, 1000/60)
 }
 
 ////////// EVENT LISTENERS //////////
