@@ -5,6 +5,26 @@ const ctx = canvas.getContext('2d')
 game.width = 1915
 game.height = 970
 
+////////// PLAYER CREATOR //////////
+
+class Player {
+    constructor(canvas, velocity) {
+        this.canvas = canvas
+        this.velocity = velocity
+
+        this.x = this.canvas.width/2
+        this.y  = this.canvas.height - 100
+        this.width = 100
+        this.height = 100
+        this.image = new Image()
+        this.image.src = 'img/player.png'
+    }
+
+    draw(ctx) {
+        ctx.drawImage(this.image, this.x, this.y, this.width, this.height)
+    }
+}
+
 ////////// ENEMY CREATOR //////////
 
 class Enemy {
@@ -141,7 +161,10 @@ class EnemyController {
     }
 }
 
+////////// CREATOR //////////
+
 const enemyController = new EnemyController(canvas)
+const player = new Player(canvas, 3)
 
 ////////// GAMEPLAY //////////
 
@@ -149,6 +172,7 @@ const playGame = () => {
     menu.replaceChildren('')
     ctx.clearRect(0, 0, game.width, game.height)
     enemyController.draw(ctx)
+    player.draw(ctx)
 }
 
 ////////// MAIN MENU //////////
