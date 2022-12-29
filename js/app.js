@@ -8,6 +8,9 @@ game.height = 970
 ////////// PLAYER CREATOR //////////
 
 class Player {
+    rightPressed = false
+    leftPressed = false
+
     constructor(canvas, velocity) {
         this.canvas = canvas
         this.velocity = velocity
@@ -18,10 +21,48 @@ class Player {
         this.height = 100
         this.image = new Image()
         this.image.src = 'img/player.png'
+
+        document.addEventListener('keydown', this.keydown)
+        document.addEventListener('keyup', this.keyup)
     }
 
     draw(ctx) {
+        this.move()
+        this.collideWithWalls()
         ctx.drawImage(this.image, this.x, this.y, this.width, this.height)
+    }
+
+    collideWithWalls() {
+        // Left check
+        if (this.x < 0) {
+            this.x = 0
+        }else if (this.x > this.canvas.width - this.width) {
+            this.x = this.canvas.width - this.width
+        }
+    }
+
+    move() {
+        if (this.rightPressed) {
+            this.x += this.velocity
+        }else if (this.leftPressed) {
+            this.x += -this.velocity
+        }
+    }
+
+    keydown = event => {
+        if(event.code == 'ArrowRight') {
+            this.rightPressed = true
+        }else if(event.code == 'ArrowLeft') {
+            this.leftPressed = true
+        }
+    }
+
+    keyup = event => {
+        if(event.code == 'ArrowRight') {
+            this.rightPressed = false
+        }else if(event.code == 'ArrowLeft') {
+            this.leftPressed = false
+        }
     }
 }
 
@@ -171,7 +212,7 @@ const player = new Player(canvas, 3)
 const playGame = () => {
     menu.replaceChildren('')
     ctx.clearRect(0, 0, game.width, game.height)
-    enemyController.draw(ctx)
+    //enemyController.draw(ctx)
     player.draw(ctx)
 }
 
@@ -219,7 +260,7 @@ const controls = () => {
     controlsTitle.style.fontSize = '75px'
     // Controls
     const controlsText = document.createElement('h3')
-    controlsText.innerText = 'You can move left and right with the A and D keys.\n\
+    controlsText.innerText = 'You can move left and right with the left and right arrow keys.\n\
     You can also fire with spacebar.\n\
     Try to survive as long as you can, and post your score to the leaderboard!'
     controlsText.style.color = 'white'
