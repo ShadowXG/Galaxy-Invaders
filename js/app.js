@@ -10,10 +10,12 @@ game.height = 970
 class Player {
     rightPressed = false
     leftPressed = false
+    shootPressed = false
 
-    constructor(canvas, velocity) {
+    constructor(canvas, velocity, bulletController) {
         this.canvas = canvas
         this.velocity = velocity
+        this.bulletController = bulletController
 
         this.x = this.canvas.width/2
         this.y  = this.canvas.height - 100
@@ -27,6 +29,10 @@ class Player {
     }
 
     draw(ctx) {
+        if (this.shootPressed) {
+            // Controls the bullet spawn and how fast and spaced out they are
+            this.bulletController.shoot(this.x + this.width/2 - 5, this.y, 7, 20)
+        }
         this.move()
         this.collideWithWalls()
         ctx.drawImage(this.image, this.x, this.y, this.width, this.height)
@@ -37,10 +43,12 @@ class Player {
         if (this.x < 0) {
             this.x = 0
         }else if (this.x > this.canvas.width - this.width) {
+            // Right check
             this.x = this.canvas.width - this.width
         }
     }
 
+    // Player movement
     move() {
         if (this.rightPressed) {
             this.x += this.velocity
@@ -49,19 +57,26 @@ class Player {
         }
     }
 
+    // Key events
     keydown = event => {
-        if(event.code == 'ArrowRight') {
+        if(event.code == 'KeyD') {
             this.rightPressed = true
-        }else if(event.code == 'ArrowLeft') {
+        }else if(event.code == 'KeyA') {
             this.leftPressed = true
+        }
+        if (event.code == 'Space') {
+            this.shootPressed = true
         }
     }
 
     keyup = event => {
-        if(event.code == 'ArrowRight') {
+        if(event.code == 'KeyD') {
             this.rightPressed = false
-        }else if(event.code == 'ArrowLeft') {
+        }else if(event.code == 'KeyA') {
             this.leftPressed = false
+        }
+        if (event.code == 'Space') {
+            this.shootPressed = false
         }
     }
 }
@@ -128,6 +143,7 @@ class EnemyController {
         this.resetTimer()
     }
 
+    // Movement timer
     resetTimer() {
         if (this.moveDownTimer <= 0) {
             this.moveDownTimer = this.moveDownTimerDefault
@@ -140,6 +156,7 @@ class EnemyController {
         }
     }
 
+    // Enemy movement and collision detection
     updateVelocityAndDirection() {
         for (const enemyRow of this.enemyRows) {
             if (this.currentDirection === this.movingDirection.right) {
@@ -202,10 +219,70 @@ class EnemyController {
     }
 }
 
+////////// BULLET CREATOR //////////
+
+class Bullet {
+    constructor(canvas, x, y, velocity, bulletColor) {
+        this.canvas = canvas
+        this.x = x
+        this.y = y
+        this.velocity = velocity
+        this.bulletColor = bulletColor
+
+        this.width = 10
+        this.height = 30
+    }
+
+    // Makes the bullet
+    draw(ctx) {
+        this.y -= this.velocity
+        ctx.fillStyle = this.bulletColor
+        ctx.fillRect(this.x, this.y, this.width, this.height)
+    }
+}
+
+class BulletController {
+    bullets = []
+    timeTillNextBullet = 0
+
+    constructor(canvas, maxBulletsAtATime, bulletColor, soundEnabled) {
+        this.canvas = canvas
+        this.maxBulletsAtATime = maxBulletsAtATime
+        this.bulletColor = bulletColor
+        this.soundEnabled = soundEnabled
+
+        this.shootSound = new Audio('sounds/shoot.wav')
+        this.shootSound.volume = 0.10
+    }
+
+    // Checks for bullets off screen removes them so the player can fire more also checks enemy bullets
+    draw(ctx) {
+        this.bullets = this.bullets.filter(bullet => bullet.y + bullet.width > 0 && bullet.y <= this.canvas.height)
+        this.bullets.forEach((bullet) => bullet.draw(ctx))
+        if (this.timeTillNextBullet > 0) {
+            this.timeTillNextBullet--
+        }
+    }
+
+    // Creates the bullets
+    shoot(x, y, velocity, timeTillNextBullet = 0) {
+        if (this.timeTillNextBullet <= 0 && this.bullets.length < this.maxBulletsAtATime) {
+            const bullet = new Bullet(this.canvas, x, y, velocity, this.bulletColor)
+            this.bullets.push(bullet)
+            if (this.soundEnabled) {
+                this.shootSound.currentTime = 0
+                this.shootSound.play()
+            }
+            this.timeTillNextBullet = timeTillNextBullet
+        }
+    }
+}
+
 ////////// CREATOR //////////
 
+const playerBulletController = new BulletController(canvas, 5, 'red', true)
 const enemyController = new EnemyController(canvas)
-const player = new Player(canvas, 3)
+const player = new Player(canvas, 3, playerBulletController)
 
 ////////// GAMEPLAY //////////
 
@@ -214,6 +291,7 @@ const playGame = () => {
     ctx.clearRect(0, 0, game.width, game.height)
     //enemyController.draw(ctx)
     player.draw(ctx)
+    playerBulletController.draw(ctx)
 }
 
 ////////// MAIN MENU //////////
@@ -260,7 +338,7 @@ const controls = () => {
     controlsTitle.style.fontSize = '75px'
     // Controls
     const controlsText = document.createElement('h3')
-    controlsText.innerText = 'You can move left and right with the left and right arrow keys.\n\
+    controlsText.innerText = 'You can move left and right with the A and D keys.\n\
     You can also fire with spacebar.\n\
     Try to survive as long as you can, and post your score to the leaderboard!'
     controlsText.style.color = 'white'
