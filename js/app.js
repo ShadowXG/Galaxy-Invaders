@@ -128,10 +128,18 @@ class EnemyController {
     defaultYVelocity = 1
     moveDownTimerDefault = 45
     moveDownTimer = this.moveDownTimerDefault
+    fireBulletTimerDefault = 100
+    fireBulletTimer = this.fireBulletTimerDefault
 
     // Targeting the canvas and creating enemies on it
-    constructor(canvas) {
+    constructor(canvas, enemyBulletController, playerBulletController) {
         this.canvas = canvas
+        this.enemyBulletController = enemyBulletController
+        this.playerBulletController = playerBulletController
+
+        this.enemyDeathSound = new Audio('sounds/enemy-death.wav')
+        this.enemyDeathSound.volume = 0.1
+
         this.createEnemies()
     }
 
@@ -139,8 +147,35 @@ class EnemyController {
     draw(ctx) {
         this.decrementTimer()
         this.updateVelocityAndDirection()
+        this.collisionDetection()
         this.drawEnemies(ctx)
         this.resetTimer()
+        this.fireBullet()
+    }
+
+    collisionDetection() {
+        this.enemyRows.forEach(enemyRow => {
+            enemyRow.forEach((enemy, enemyIndex) => {
+                if (this.playerBulletController.collideWith(enemy)) {
+                    this.enemyDeathSound.currentTime = 0
+                    this.enemyDeathSound.play()
+                    enemyRow.splice(enemyIndex, 1)
+                }
+            })
+        })
+        this.enemyRows = this.enemyRows.filter((enemyRow) => enemyRow.length > 0)
+    }
+
+    // Enemy firing bullets
+    fireBullet() {
+        this.fireBulletTimer--
+        if (this.fireBulletTimer <= 0) {
+            this.fireBulletTimer = this.fireBulletTimerDefault
+            const allEnemies = this.enemyRows.flat()
+            const enemyIndex = Math.floor(Math.random() * allEnemies.length)
+            const enemy = allEnemies[enemyIndex]
+            this.enemyBulletController.shoot(enemy.x, enemy.y, -3)
+        }
     }
 
     // Movement timer
@@ -239,6 +274,17 @@ class Bullet {
         ctx.fillStyle = this.bulletColor
         ctx.fillRect(this.x, this.y, this.width, this.height)
     }
+
+    collideWith(sprite) {
+        if (this.x + this.width > sprite.x &&
+            this.x < sprite.x + sprite.width &&
+            this.y + this.height > sprite.y &&
+            this.y < sprite.y + sprite.height) {
+                return true
+            }else {
+                return false
+            }
+    }
 }
 
 class BulletController {
@@ -264,6 +310,15 @@ class BulletController {
         }
     }
 
+    collideWith(sprite) {
+        const hitSpriteIndex = this.bullets.findIndex(bullet => bullet.collideWith(sprite))
+        if (hitSpriteIndex >= 0) {
+            this.bullets.splice(hitSpriteIndex, 1)
+            return true
+        }
+        return false
+    }
+
     // Creates the bullets
     shoot(x, y, velocity, timeTillNextBullet = 0) {
         if (this.timeTillNextBullet <= 0 && this.bullets.length < this.maxBulletsAtATime) {
@@ -281,7 +336,8 @@ class BulletController {
 ////////// CREATOR //////////
 
 const playerBulletController = new BulletController(canvas, 5, 'red', true)
-const enemyController = new EnemyController(canvas)
+const enemyBulletController = new BulletController(canvas, 4, 'white', false)
+const enemyController = new EnemyController(canvas, enemyBulletController, playerBulletController)
 const player = new Player(canvas, 3, playerBulletController)
 
 ////////// GAMEPLAY //////////
@@ -289,9 +345,10 @@ const player = new Player(canvas, 3, playerBulletController)
 const playGame = () => {
     menu.replaceChildren('')
     ctx.clearRect(0, 0, game.width, game.height)
-    //enemyController.draw(ctx)
+    enemyController.draw(ctx)
     player.draw(ctx)
     playerBulletController.draw(ctx)
+    enemyBulletController.draw(ctx)
 }
 
 ////////// MAIN MENU //////////
