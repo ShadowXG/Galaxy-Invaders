@@ -102,7 +102,20 @@ class Enemy {
         this.x += xVelocity
         this.y += yVelocity
     }
+
+    collideWith(sprite) {
+        if (this.x + this.width > sprite.x &&
+            this.x < sprite.x + sprite.width &&
+            this.y + this.height > sprite.y &&
+            this.y < sprite.y + sprite.height) {
+                return true
+            }else {
+                return false
+        }
+    }
 }
+
+let enemyRows = []
 
 class EnemyController {
     enemyMap = [
@@ -112,7 +125,7 @@ class EnemyController {
         [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
         [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     ]
-    enemyRows = []
+    // enemyRows = []
 
     movingDirection = {
         left: 0,
@@ -139,7 +152,6 @@ class EnemyController {
 
         this.enemyDeathSound = new Audio('sounds/enemy-death.wav')
         this.enemyDeathSound.volume = 0.1
-
         this.createEnemies()
     }
 
@@ -154,7 +166,7 @@ class EnemyController {
     }
 
     collisionDetection() {
-        this.enemyRows.forEach(enemyRow => {
+        enemyRows.forEach(enemyRow => {
             enemyRow.forEach((enemy, enemyIndex) => {
                 if (this.playerBulletController.collideWith(enemy)) {
                     this.enemyDeathSound.currentTime = 0
@@ -163,7 +175,7 @@ class EnemyController {
                 }
             })
         })
-        this.enemyRows = this.enemyRows.filter((enemyRow) => enemyRow.length > 0)
+        enemyRows = enemyRows.filter((enemyRow) => enemyRow.length > 0)
     }
 
     // Enemy firing bullets
@@ -171,7 +183,7 @@ class EnemyController {
         this.fireBulletTimer--
         if (this.fireBulletTimer <= 0) {
             this.fireBulletTimer = this.fireBulletTimerDefault
-            const allEnemies = this.enemyRows.flat()
+            const allEnemies = enemyRows.flat()
             const enemyIndex = Math.floor(Math.random() * allEnemies.length)
             const enemy = allEnemies[enemyIndex]
             this.enemyBulletController.shoot(enemy.x, enemy.y, -3)
@@ -193,7 +205,7 @@ class EnemyController {
 
     // Enemy movement and collision detection
     updateVelocityAndDirection() {
-        for (const enemyRow of this.enemyRows) {
+        for (const enemyRow of enemyRows) {
             if (this.currentDirection === this.movingDirection.right) {
                 this.xVelocity = this.defaultXVelocity
                 this.yVelocity = 0
@@ -234,7 +246,7 @@ class EnemyController {
 
     // this changes the array into a latteral array, to draw the enemies easier
     drawEnemies(ctx) {
-        this.enemyRows.flat().forEach((enemy) => {
+        enemyRows.flat().forEach((enemy) => {
             enemy.move(this.xVelocity, this.yVelocity)
             enemy.draw(ctx)
         })
@@ -242,15 +254,20 @@ class EnemyController {
 
     // This creates the enemy by looking through the array and assinging a number to enemy number to be used later
     createEnemies() {
+        // console.log('The enemies have been created!', enemyRows)
         this.enemyMap.forEach((row, rowIndex) => {
-            this.enemyRows[rowIndex] = []
+            enemyRows[rowIndex] = []
             row.forEach((enemyNumber, enemyIndex) => {
                 if (enemyNumber > 0) {
-                    this.enemyRows[rowIndex].push(
+                    enemyRows[rowIndex].push(
                         new Enemy(enemyIndex * 150, rowIndex * 75, enemyNumber))
                 }
             })
         })
+    }
+
+    collideWith(sprite) {
+        return enemyRows.flat().some(enemy => enemy.collideWith(sprite))
     }
 }
 
@@ -340,15 +357,69 @@ const enemyBulletController = new BulletController(canvas, 4, 'white', false)
 const enemyController = new EnemyController(canvas, enemyBulletController, playerBulletController)
 const player = new Player(canvas, 3, playerBulletController)
 
+////////// GAME DONE? //////////
+
+let isGameOver = false
+let isGameWon = false
+
+const checkGameOver = () => {
+    if(isGameOver){
+        return
+    }
+    if (enemyBulletController.collideWith(player)) {
+        isGameOver = true
+    }
+    if(enemyController.collideWith(player)) {
+        isGameOver = true
+    }
+    if(enemyRows.length === 0) {
+        isGameWon = true
+        isGameOver = true
+    }
+}
+
+const displayGameOver = () => {
+    if (isGameOver) {
+        clearInterval(interval)
+        const end = document.createElement('h1')
+        end.innerText = isGameWon ? 'You Win' : 'Game Over'
+        end.style.webkitTextStroke = '2px #fff'
+        end.style.fontSize = '100px'
+        const quitButton = document.createElement('button')
+        quitButton.id = 'quitButton'
+        quitButton.style.fontSize = '75px'
+        quitButton.innerText = 'Quit'
+        quitButton.style.webkitTextStroke = '2px #fff'
+        quitButton.style.paddingRight = "50px"
+        quitButton.style.backgroundColor = 'rgba(0, 0, 0, 0)'
+        menu.appendChild(end)
+        menu.appendChild(quitButton)
+        quitButton.addEventListener('click', () => {location.reload()})
+    }
+}
+
+////////// RESTART GAME //////////
+
+// const restartGame = () => {
+//     isGameOver = false
+//     isGameWon = false
+//     startGame()
+// }
+
 ////////// GAMEPLAY //////////
 
 const playGame = () => {
+    checkGameOver()
     menu.replaceChildren('')
+    displayGameOver()
     ctx.clearRect(0, 0, game.width, game.height)
-    enemyController.draw(ctx)
-    player.draw(ctx)
-    playerBulletController.draw(ctx)
-    enemyBulletController.draw(ctx)
+    if(!isGameOver) {
+        enemyController.draw(ctx)
+        // console.log(enemyController)
+        player.draw(ctx)
+        playerBulletController.draw(ctx)
+        enemyBulletController.draw(ctx)
+    }
 }
 
 ////////// MAIN MENU //////////
@@ -416,8 +487,8 @@ const controls = () => {
 
 ////////// GAME LOOP //////////
 
-const startGame = () => {
-    setInterval(playGame, 1000/60)
+let startGame = () => {
+    interval = setInterval(playGame, 1000/60)
 }
 
 ////////// EVENT LISTENERS //////////
