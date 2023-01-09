@@ -1,4 +1,4 @@
-# Galaxy Wars
+# Galaxy Invaders
 A Star Wars twist on space invaders, shoot all the tie-fighters to win the game! Don't let them hit you or the bottom or you lose!
 Is that Darth Vader?
 ---
