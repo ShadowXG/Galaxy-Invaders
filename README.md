@@ -8,7 +8,6 @@ Technoligies used:
 - Javascript
 - Canvas
 ---
----
 User Stories:
 - As a user, I want to be able to look at controls
 - As a user, I want to be able to restart the game
